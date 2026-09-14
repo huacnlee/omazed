@@ -40,6 +40,7 @@
         "icon.accent": "{{accent}}",
         "status_bar.background": "{{background_darker}}",
         "title_bar.background": "{{background_darker}}",
+        "title_bar.inactive_background": "{{background_darker}}",
         "toolbar.background": "{{background}}",
         "tab_bar.background": "{{background_darker}}",
         "tab.inactive_background": "{{background_darker}}",

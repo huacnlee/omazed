@@ -753,7 +753,7 @@ main() {
     fi
 
     if [[ "$input_file" == *.toml ]]; then
-        if grep -qE "^(accent|color0|red|mode)\s*=" "$input_file" 2>/dev/null; then
+        if ! grep -qE '^\[colors\.' "$input_file" 2>/dev/null; then
             parse_colors_toml "$input_file"
         else
             parse_alacritty_toml "$input_file"
