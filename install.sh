@@ -157,6 +157,17 @@ setup_omarchy_hook() {
 omazed set "$1"
 EOF
         chmod +x "$v4_hook_file"
+        local font_hook_dir="$OMARCHY_HOOKS_DIR/font-set.d"
+        mkdir -p "$font_hook_dir"
+        local v4_font_hook_file="$font_hook_dir/omazed"
+
+        cat > "$v4_font_hook_file" << 'EOF'
+#!/bin/bash
+omazed set-font "$1"
+EOF
+        chmod +x "$v4_font_hook_file"
+        info "Created v4 omarchy font hook: $v4_font_hook_file"
+
         info "Created v4 omarchy hook: $v4_hook_file"
 
         # Cleanup old v3 hook if it exists

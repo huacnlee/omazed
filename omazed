@@ -12,13 +12,11 @@ LOG_FILE="$HOME/.local/share/omazed/sync.log"
 OMARCHY_HOOKS_DIR="$HOME/.config/omarchy/hooks"
 THEME_SET_HOOK="$OMARCHY_HOOKS_DIR/theme-set"
 INITIALIZED_MARKER="$HOME/.local/share/omazed/initialized"
-# Resolve the generator and template that belong to *this* copy of omazed:
-# the directory this script lives in first, then the user install, then the
-# package install. A user install in ~/.local/bin must not be shadowed by an
-# older package copy in /usr/bin.
+
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 GENERATOR_SCRIPT=""
 TEMPLATE_FILE=""
+FONT_SCRIPT=""
 for candidate_dir in "$SCRIPT_DIR" "$HOME/.local/bin" "/usr/bin"; do
     if [[ -z "$GENERATOR_SCRIPT" ]]; then
         if [[ -f "$candidate_dir/omazed-generator.sh" ]]; then
@@ -29,6 +27,9 @@ for candidate_dir in "$SCRIPT_DIR" "$HOME/.local/bin" "/usr/bin"; do
     fi
     if [[ -z "$TEMPLATE_FILE" && -f "$candidate_dir/omazed-theme.tpl" ]]; then
         TEMPLATE_FILE="$candidate_dir/omazed-theme.tpl"
+    fi
+    if [[ -z "$FONT_SCRIPT" && -f "$candidate_dir/omazed-font.sh" ]]; then
+        FONT_SCRIPT="$candidate_dir/omazed-font.sh"
     fi
 done
 
@@ -142,6 +143,17 @@ setup_omarchy_hook() {
 omazed set "$1"
 EOF
         chmod +x "$v4_hook_file"
+        local font_hook_dir="$OMARCHY_HOOKS_DIR/font-set.d"
+        mkdir -p "$font_hook_dir"
+        local v4_font_hook_file="$font_hook_dir/omazed"
+
+        cat > "$v4_font_hook_file" << 'EOF'
+#!/bin/bash
+omazed set-font "$1"
+EOF
+        chmod +x "$v4_font_hook_file"
+        info "Created v4 omarchy font hook: $v4_font_hook_file"
+
         info "Created v4 omarchy hook: $v4_hook_file"
 
         # Cleanup old v3 hook if it exists
@@ -191,7 +203,7 @@ setup_user() {
         return 1
     fi
 
-    sync_theme
+    sync_all
 
     echo ""
     success "Setup complete!"
@@ -387,6 +399,15 @@ set_initial_theme_once() {
     info "Zed theme set to: $theme_name"
 }
 
+sync_all() {
+    local result=0
+    sync_theme || result=1
+    if [[ -f "$FONT_SCRIPT" ]]; then
+        "$FONT_SCRIPT" || result=1
+    fi
+    return "$result"
+}
+
 sync_theme() {
     local current_theme
     current_theme=$(get_current_theme)
@@ -435,6 +456,7 @@ COMMANDS:
     setup       Set up themes and automatic theme sync hook
     sync        Sync theme once and exit
     set         Set theme by name (used by omarchy hooks)
+    set-font    Set font by name (used by omarchy hooks)
 
 OPTIONS:
     -h, --help  Show this help
@@ -467,6 +489,12 @@ main() {
                 theme_arg="$1"
                 shift
                 ;;
+            set-font)
+                command="set-font"
+                shift
+                theme_arg="${1:-}"
+                [[ $# -gt 0 ]] && shift
+                ;;
             setup)
                 command="setup"
                 shift
@@ -487,7 +515,7 @@ main() {
 
     case $command in
         sync)
-            sync_theme
+            sync_all
             ;;
 
         set)
@@ -497,6 +525,14 @@ main() {
                 exit 1
             fi
             set_theme_from_name "$theme_arg"
+            ;;
+        set-font)
+            if [[ -f "$FONT_SCRIPT" ]]; then
+                "$FONT_SCRIPT" "$theme_arg"
+            else
+                error "Font script not found at $FONT_SCRIPT"
+                exit 1
+            fi
             ;;
         setup)
             setup_user

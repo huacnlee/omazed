@@ -5,6 +5,7 @@ Live theme switching for Zed in Omarchy. Omazed generates a Zed theme from the c
 ## Features
 
 - Live theme syncing through Omarchy hooks
+- Live font syncing from Omarchy's system monospace font
 - Generates `~/.config/zed/themes/omazed.json` from `colors.toml` (fallback to `alacritty.toml`)
 - Support for Omarchy v3 and Omarchy v4 (Quattro)
 - One-time Zed theme selection on first run after install/update
@@ -33,9 +34,10 @@ cd omazed
 
 ## How It Works
 
-1) Omazed ensures the Omarchy hook triggers `omazed set "$1"` on theme changes.
+1) Omazed ensures the Omarchy hook triggers `omazed set "$1"` on theme changes and `omazed set-font` on font changes.
 2) On first run after install/update, Omazed sets the Zed theme to `Omazed` once.
 3) On every theme change, Omazed regenerates `~/.config/zed/themes/omazed.json` from the current Omarchy palette.
+4) On every font change, Omazed updates Zed's `buffer_font_family` live.
 
 ## Usage
 
