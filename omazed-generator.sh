@@ -587,7 +587,12 @@ compute_derived_colors() {
 
     accent_20=$(apply_alpha "$accent" 20)
     accent_40=$(apply_alpha "$accent" 40)
+    foreground_08=$(apply_alpha "$foreground" 8)
+    foreground_12=$(apply_alpha "$foreground" 12)
+    foreground_18=$(apply_alpha "$foreground" 18)
+    foreground_25=$(apply_alpha "$foreground" 25)
     foreground_30=$(apply_alpha "$foreground" 30)
+    foreground_35=$(apply_alpha "$foreground" 35)
     foreground_50=$(apply_alpha "$foreground" 50)
 
     color1_20=$(apply_alpha "$color1" 20)
@@ -612,6 +617,8 @@ compute_derived_colors() {
     ensured_green_20=$(apply_alpha "$ensured_green" 20)
     ensured_yellow_20=$(apply_alpha "$ensured_yellow" 20)
     ensured_yellow_40=$(apply_alpha "$ensured_yellow" 40)
+    ensured_red_40=$(apply_alpha "$ensured_red" 40)
+    ensured_green_40=$(apply_alpha "$ensured_green" 40)
 }
 
 render_template() {
@@ -667,6 +674,13 @@ render_template() {
         "ensured_green_20" "$ensured_green_20"
         "ensured_yellow_20" "$ensured_yellow_20"
         "ensured_yellow_40" "$ensured_yellow_40"
+        "ensured_red_40" "$ensured_red_40"
+        "ensured_green_40" "$ensured_green_40"
+        "foreground_08" "$foreground_08"
+        "foreground_12" "$foreground_12"
+        "foreground_18" "$foreground_18"
+        "foreground_25" "$foreground_25"
+        "foreground_35" "$foreground_35"
     )
 
     local index=0
