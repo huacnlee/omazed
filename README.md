@@ -60,6 +60,31 @@ Omazed's generator reads:
 The output is written directly to:
 - `~/.config/zed/themes/omazed.json`
 
+### How the palette maps to Zed
+
+The mapping follows Omarchy's own application templates (the VS Code, Helix and
+Alacritty themes generated from the same `colors.toml`) and the shell's
+`shell.toml` control states:
+
+- **Surfaces** — the file tree, title bar, status bar, tab bar, toolbar, panels
+  and popovers all sit on `background`. Omarchy chrome is one flat canvas; only
+  the active editor line uses the raised `lighter_background`.
+- **Borders** — panel edges, tab bar, pane splits and popover edges use
+  foreground at 12%, the shell's `PanelSeparator` hairline, which lands close
+  to the `muted` 40% the VS Code template uses for its splits. De-emphasized
+  dividers use foreground at 8%. Focus uses `accent`, like the Hyprland
+  active-window border. The theme's `muted` (v3: bright black) drives indent
+  guides, wrap guides and rendered whitespace.
+- **Interactive states** — hover, pressed and disabled fills are
+  foreground-tinted alphas (8% / 22% / 4%), the same values as the shell's
+  `[controls]` section. Selection uses the theme's `selection` color when it
+  ships one.
+- **Cursor** — `bright_foreground` (falling back to `cursor`, then
+  `foreground`), matching the Alacritty and VS Code templates.
+- **Search matches** — `yellow` at 20% / 40%, as in the VS Code template.
+- **Secondary text** — `dark_foreground`, brightened toward `foreground` until
+  it meets WCAG 4.5:1 against the background.
+
 ## Notes
 
 - Omazed only sets the Zed theme to `Omazed` once on first run after install/update.

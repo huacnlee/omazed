@@ -164,6 +164,30 @@ apply_alpha() {
     printf "%s%02x" "$hex" "$alpha"
 }
 
+contrast_ratio() {
+    local hex1="$1"
+    local hex2="$2"
+
+    awk -v a="$hex1" -v b="$hex2" '
+    function linearize(c) {
+        c = c / 255.0;
+        if (c <= 0.03928) return c / 12.92;
+        return ((c + 0.055) / 1.055) ^ 2.4;
+    }
+    function luminance(hex) {
+        r = strtonum("0x" substr(hex, 2, 2))
+        g = strtonum("0x" substr(hex, 4, 2))
+        b = strtonum("0x" substr(hex, 6, 2))
+        return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
+    }
+    BEGIN {
+        l1 = luminance(a)
+        l2 = luminance(b)
+        if (l1 < l2) { t = l1; l1 = l2; l2 = t }
+        printf "%.3f\n", (l1 + 0.05) / (l2 + 0.05)
+    }'
+}
+
 escape_sed() {
     local value="$1"
     value=${value//\\/\\\\}
@@ -532,6 +556,12 @@ finalize_palette_defaults() {
         accent="${color4:-$foreground}"
     fi
 
+    # Remember which optional roles the theme itself supplied before the
+    # defaults below fill them in. compute_derived_colors derives the Zed
+    # border and selection roles from these only when they are genuine.
+    theme_border="$color8"
+    theme_selection="$selection_background"
+
     cursor="${cursor:-$foreground}"
     selection_foreground="${selection_foreground:-$background}"
     selection_background="${selection_background:-$foreground}"
@@ -557,20 +587,20 @@ finalize_palette_defaults() {
 compute_derived_colors() {
     # Prefer v4 theme-author-provided values when available,
     # otherwise compute from base colors (v3 fallback)
+    # Surface roles follow the Omarchy application role model: prefer the
+    # v4 theme-authored keys, otherwise mix background toward foreground
+    # (inset 8%, raised surface 5%). Mixing toward the foreground instead of
+    # lightening keeps the derivation correct for light themes as well.
     if [[ -n "$_v4_dark_background" ]]; then
         background_darker="$_v4_dark_background"
-    elif [[ "$appearance" == "light" ]]; then
-        background_darker=$(darken_color "$background" 12)
     else
-        background_darker=$(darken_color "$background" 25)
+        background_darker=$(blend_colors "$foreground" "$background" 8)
     fi
 
     if [[ -n "$_v4_lighter_background" ]]; then
         background_lighter="$_v4_lighter_background"
-    elif [[ "$appearance" == "light" ]]; then
-        background_lighter=$(darken_color "$background" 4)
     else
-        background_lighter=$(lighten_color "$background" 10)
+        background_lighter=$(blend_colors "$foreground" "$background" 5)
     fi
 
     if [[ "$appearance" == "light" ]]; then
@@ -589,6 +619,43 @@ compute_derived_colors() {
     accent_40=$(apply_alpha "$accent" 40)
     foreground_30=$(apply_alpha "$foreground" 30)
     foreground_50=$(apply_alpha "$foreground" 50)
+
+    # Shared control states from Omarchy's shell.toml [controls]: every
+    # interactive fill is a foreground-tinted alpha, not an accent wash.
+    #   .04 normal fill   .08 hover/focus   .18 selected   .22 pressed
+    #   .12 divider hairline   .18/.25/.35 scrollbar thumb rest/hover/drag
+    foreground_04=$(apply_alpha "$foreground" 4)
+    foreground_08=$(apply_alpha "$foreground" 8)
+    foreground_12=$(apply_alpha "$foreground" 12)
+    foreground_18=$(apply_alpha "$foreground" 18)
+    foreground_22=$(apply_alpha "$foreground" 22)
+    foreground_25=$(apply_alpha "$foreground" 25)
+    foreground_35=$(apply_alpha "$foreground" 35)
+
+    # Border role: the theme's muted (v4) or bright black (v3) when it is
+    # actually distinguishable from the background; otherwise background
+    # mixed 25% toward foreground, as in the Omarchy application role model.
+    border_color="$theme_border"
+    if [[ -z "$border_color" ]] || (( $(awk "BEGIN {print ($(contrast_ratio "$border_color" "$background") < 1.1)}") )); then
+        border_color=$(blend_colors "$foreground" "$background" 25)
+    fi
+    border_color_40=$(apply_alpha "$border_color" 40)
+
+    # Bright role: headings and the text cursor. Omarchy's own alacritty,
+    # VS Code and neovim templates all put the cursor on bright_foreground.
+    bright_foreground="${_v4_bright_foreground:-$cursor}"
+
+    # Selection roles. When the theme ships a selection color it is used as
+    # the list-selection ground and, at 60% like the VS Code template, as the
+    # editor text-selection ground. Otherwise fall back to the shell's
+    # selected fill (foreground .18) and an accent wash for text.
+    if [[ -n "$theme_selection" ]]; then
+        list_selection="$theme_selection"
+        text_selection=$(apply_alpha "$theme_selection" 60)
+    else
+        list_selection="$foreground_18"
+        text_selection="$accent_20"
+    fi
 
     color1_20=$(apply_alpha "$color1" 20)
     color2_20=$(apply_alpha "$color2" 20)
@@ -609,7 +676,9 @@ compute_derived_colors() {
     fi
 
     ensured_red_20=$(apply_alpha "$ensured_red" 20)
+    ensured_red_40=$(apply_alpha "$ensured_red" 40)
     ensured_green_20=$(apply_alpha "$ensured_green" 20)
+    ensured_green_40=$(apply_alpha "$ensured_green" 40)
     ensured_yellow_20=$(apply_alpha "$ensured_yellow" 20)
     ensured_yellow_40=$(apply_alpha "$ensured_yellow" 40)
 }
@@ -651,6 +720,18 @@ render_template() {
         "foreground_muted" "$foreground_muted"
         "foreground_30" "$foreground_30"
         "foreground_50" "$foreground_50"
+        "foreground_04" "$foreground_04"
+        "foreground_08" "$foreground_08"
+        "foreground_12" "$foreground_12"
+        "foreground_18" "$foreground_18"
+        "foreground_22" "$foreground_22"
+        "foreground_25" "$foreground_25"
+        "foreground_35" "$foreground_35"
+        "border_color" "$border_color"
+        "border_color_40" "$border_color_40"
+        "bright_foreground" "$bright_foreground"
+        "list_selection" "$list_selection"
+        "text_selection" "$text_selection"
         "accent_20" "$accent_20"
         "accent_40" "$accent_40"
         "color1_20" "$color1_20"
@@ -664,7 +745,9 @@ render_template() {
         "ensured_green" "$ensured_green"
         "ensured_yellow" "$ensured_yellow"
         "ensured_red_20" "$ensured_red_20"
+        "ensured_red_40" "$ensured_red_40"
         "ensured_green_20" "$ensured_green_20"
+        "ensured_green_40" "$ensured_green_40"
         "ensured_yellow_20" "$ensured_yellow_20"
         "ensured_yellow_40" "$ensured_yellow_40"
     )
@@ -726,6 +809,8 @@ main() {
     _v4_dark_foreground=""
     _v4_light_foreground=""
     _v4_bright_foreground=""
+    theme_border=""
+    theme_selection=""
 
     local script_dir
     script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -752,12 +837,12 @@ main() {
         exit 1
     fi
 
-    if [[ "$input_file" == *.toml ]]; then
-        if grep -qE "^(accent|color0|red|mode)\s*=" "$input_file" 2>/dev/null; then
-            parse_colors_toml "$input_file"
-        else
-            parse_alacritty_toml "$input_file"
-        fi
+    # An Alacritty config keeps its colors in [colors.*] tables; a flat
+    # Omarchy colors.toml has none. Keying on the section header (rather than
+    # on a `red =` line, which v4 alacritty.toml also contains) keeps the
+    # fallback from reading [colors.selection] as the primary background.
+    if [[ "$input_file" == *.toml ]] && ! grep -qE '^\[colors\.' "$input_file" 2>/dev/null; then
+        parse_colors_toml "$input_file"
     else
         parse_alacritty_toml "$input_file"
     fi
