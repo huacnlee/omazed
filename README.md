@@ -15,7 +15,17 @@ Live theme switching for Zed in Omarchy. Omazed generates a Zed theme from the c
 
 **Note**: Omazed is automatically installed on Omarchy (3.8.0 onwards) when installing Zed via the **Install > Editor** menu.
 
-### AUR (Recommended)
+### One-command install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/aps6/omazed/main/install.sh | sh
+```
+
+Run as your desktop user, without `sudo`. Requires `curl`, Bash, Zed, `jq`,
+and `perl`. The command downloads all components into a temporary directory,
+installs them, and initializes theme/font syncing. Run it again to update.
+
+### AUR
 
 ```bash
 yay -S omazed
@@ -31,6 +41,12 @@ git clone https://github.com/aps6/omazed.git
 cd omazed
 ./install.sh
 ```
+
+Run as your desktop user (without `sudo`). Requires Zed, `jq`, and `perl`;
+on Arch Linux, install missing dependencies with `sudo pacman -S --needed jq perl`.
+The installer copies all components, configures theme/font hooks, and runs the
+initial sync in one step. It can be rerun to update or repair an installation,
+and preserves unrelated Zed themes and hook commands.
 
 ## How It Works
 
