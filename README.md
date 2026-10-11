@@ -18,7 +18,7 @@ Live theme switching for Zed in Omarchy. Omazed generates a Zed theme from the c
 ### One-command install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aps6/omazed/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/huacnlee/omazed/main/install.sh | sh
 ```
 
 Run as your desktop user, without `sudo`. Requires `curl`, Bash, Zed, `jq`,
@@ -37,7 +37,7 @@ omazed setup
 ### Manual
 
 ```bash
-git clone https://github.com/aps6/omazed.git
+git clone --branch main https://github.com/huacnlee/omazed.git
 cd omazed
 ./install.sh
 ```

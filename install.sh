@@ -24,7 +24,7 @@ trap 'rm -rf -- "$download_dir"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-base_url=https://raw.githubusercontent.com/aps6/omazed/main
+base_url=https://raw.githubusercontent.com/huacnlee/omazed/main
 printf '[INFO] Downloading Omazed...\n'
 mkdir -p "$download_dir/scripts"
 for file in scripts/install.sh omazed omazed-generator.sh omazed-font.sh omazed-theme.tpl; do
